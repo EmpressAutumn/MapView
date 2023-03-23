@@ -1,0 +1,53 @@
+{
+  "1": {
+    "name": "Maryland",
+    "prefix": "The Grand Republic of ",
+    "established": "2033",
+    "government": "Presidential Republic",
+    "leader": "Blair Halifax",
+    "constituencies": {
+      "1": {
+        "name": "Washington",
+        "prefix": "The City of ",
+        "suffix": ", Douglass",
+        "government": "Autonomous City",
+        "coordinates": {
+
+        }
+      },
+      "2": {
+        "name": "Baltimore",
+        "prefix": "The City of ",
+        "government": "Autonomous City",
+        "coordinates": {
+
+        }
+      },
+      "3": {
+        "name": "Philadelphia",
+        "prefix": "The City of ",
+        "government": "Autonomous City",
+        "coordinates": {
+
+        }
+      },
+      "4": {
+        "name": "Delaware",
+        "suffix": "County",
+        "government": "Industrial County",
+        "coordinates": {
+
+        }
+      }
+    }
+  },
+  "2": {
+    "name": "Jersey",
+    "prefix": "The ",
+    "suffix": " Republic",
+    "government": "Agrarian Republic",
+    "constituencies": {
+
+    }
+  }
+}
