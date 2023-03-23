@@ -13,18 +13,16 @@ class MapData:
 
 
 class Region:
-    def __init__(self, name, prefix="", suffix="", color="", government="", leader=""):
-        self.name = name
-        if prefix is not None:
-            self.prefix = prefix
-        if suffix is not None:
-            self.suffix = suffix
-        if color is None:
+    def __init__(self, country_data):
+        self.name = country_data["name"]
+        self.prefix = country_data["prefix"]
+        self.suffix = country_data["suffix"]
+        if country_data["color"] is not None:
+            self.color = country_data["color"]
+        else:
             self.color = list(np.random.choice(range(256), size=3))  # Generates a random color value, may be changed later
-        if government is not None:
-            self.government = government
-        if leader is not None:
-            self.leader = leader
+        self.government = country_data["government"]
+        self.leader = country_data["leader"]
         self.consts = []
         self.coords = []
 
@@ -85,11 +83,21 @@ def map_handler(md):
         pygame.display.update()
 
 
-def country_read_handler(raw_data):
-    base_level = True
-    for key, value in raw_data.items():
-        if key == "constituencies":
-            base_level = False
+def read_country(count):
+    count_data = {"name": None, "prefix": None, "suffix": None, "color": None, "government": None, "leader": None}
+    for key, value in count.items():
+        try:
+            count_data[key] = count[key]
+        except KeyError:
+            pass
+    country = Region(count_data)
+    try:
+        for coords in count["coordinates"]:
+            country.add_coord((coords[0], coords[1]))
+    except KeyError:
+        for ct in count["constituencies"]:
+            country.add_const(read_country(ct))
+    return country
 
 
 def read_map(fn):
@@ -97,12 +105,8 @@ def read_map(fn):
         fn = input("File to be opened: ")
     file = json.load(open("map/" + fn))
     md = MapData()
-    for key, value in file.items():
-        if key == "structure":
-            print(fn + " using file structure " + str(value))
-        else:
-            country_read_handler(value)
-            md.add_country("")
+    for count in file["map_data"]:
+        md.add_country(read_country(count))
     return md
 
 
