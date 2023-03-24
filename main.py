@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 import numpy as np
 import pygame
@@ -20,7 +21,7 @@ class Region:
         if country_data["color"] is not None:
             self.color = country_data["color"]
         else:
-            self.color = list(np.random.choice(range(256), size=3))  # Generates a random color value, may be changed later
+            self.color = list(np.random.choice(range(256), size=3))  # Generates a random color value, will be changed later
         self.government = country_data["government"]
         self.leader = country_data["leader"]
         self.consts = []
@@ -40,26 +41,39 @@ parser.add_argument("-f", "--filename", type=str)
 BACKGROUND = (0, 0, 0)
 
 
-def coords_alterer(coords, o_x, o_y):
+def coords_alterer(coords, o_x, o_y, zoom):
     for i in range(len(coords)):
-        coords[i] += (o_x, o_y)
+        coords[i] = (coords[i][0] * zoom + o_x, coords[i][1] * zoom + o_y)
     return coords
 
 
-def draw_map(screen, md, o_x, o_y):
-    for i in range(0, len(md.countries) - 1):
+def get_coords(country):
+    if len(country.coords) > 1: 
+        return country.coords
+    else:
+        coords = []
+        for ct in country.consts:
+            for cd in get_coords(ct):
+                coords.append(cd)
+        return coords
+
+
+def draw_map(screen, md, o_x, o_y, zoom):
+    for i in range(0, len(md.countries)):
+        coords = get_coords(md.countries[i])
         color = md.countries[i].color
-        pygame.draw.polygon(screen, color, coords_alterer(md.countries[i].coords, o_x, o_y))
+        pygame.draw.polygon(screen, color, coords_alterer(copy.deepcopy(coords), o_x, o_y, zoom))
 
 
 def map_handler(md):
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
+    screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
     pygame.display.set_caption(f"MapView {json.load(open('properties.json'))['version']}")
 
     running = True
     panning = False
     o_x, o_tx, o_y, o_ty = 0, 0, 0, 0
+    zoom = 20
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -79,7 +93,7 @@ def map_handler(md):
                 o_tx, o_ty = event.pos
 
         screen.fill(BACKGROUND)
-        draw_map(screen, md, o_x, o_y)
+        draw_map(screen, md, o_x, o_y, zoom)
         pygame.display.update()
 
 
