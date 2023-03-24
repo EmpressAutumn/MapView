@@ -3,6 +3,8 @@ import copy
 import json
 import numpy as np
 import pygame
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 class MapData:
@@ -48,7 +50,7 @@ def coords_alterer(coords, o_x, o_y, zoom):
 
 
 def get_coords(country):
-    if len(country.coords) > 1: 
+    if len(country.coords) > 1:
         return country.coords
     else:
         coords = []
@@ -63,6 +65,13 @@ def draw_map(screen, md, o_x, o_y, zoom):
         coords = get_coords(md.countries[i])
         color = md.countries[i].color
         pygame.draw.polygon(screen, color, coords_alterer(copy.deepcopy(coords), o_x, o_y, zoom))
+
+
+def country_clicked_getter(md, x, y, o_x, o_y, zoom):
+    for i in range(0, len(md.countries)):
+        if Polygon(coords_alterer(copy.deepcopy(get_coords(md.countries[i])), o_x, o_y, zoom)).contains(Point(x, y)):
+            return i
+    return 0
 
 
 def map_handler(md):
@@ -91,6 +100,13 @@ def map_handler(md):
                 o_x += (event.pos[0] - o_tx)
                 o_y += (event.pos[1] - o_ty)
                 o_tx, o_ty = event.pos
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left Click
+                clicked = country_clicked_getter(md, event.pos[0], event.pos[1], o_x, o_y, zoom)
+                if clicked != 0:
+                    print("Clicked on country", clicked)
+                else:
+                    print("Clicked on nothing")
 
         screen.fill(BACKGROUND)
         draw_map(screen, md, o_x, o_y, zoom)
