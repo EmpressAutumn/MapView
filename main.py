@@ -3,6 +3,7 @@ import copy
 import json
 import numpy as np
 import pygame
+import pygame_gui
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -74,19 +75,32 @@ def country_clicked_getter(md, x, y, o_x, o_y, zoom):
     return 0
 
 
+def init_gui(manager):
+    gui_dict = {"quit": pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((700, 550), (100, 50)),
+        text="Quit",
+        manager=manager
+    )}
+    return gui_dict
+
+
 def map_handler(md):
     pygame.init()
-    screen = pygame.display.set_mode((800, 600), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption(f"MapView {json.load(open('properties.json'))['version']}")
 
+    manager = pygame_gui.UIManager((800, 600))
+    gui_dict = init_gui(manager)
+
+    clock = pygame.time.Clock()
     running = True
     panning = False
     o_x, o_tx, o_y, o_ty = 0, 0, 0, 0
     zoom = 20
     while running:
+        time_delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+            if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == gui_dict["quit"]:
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:  # Middle Click
@@ -108,8 +122,17 @@ def map_handler(md):
                 else:
                     print("Clicked on nothing")
 
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == gui_dict["hello_button"]:
+                    print('Hello World!')
+
+            manager.process_events(event)
+
+        manager.update(time_delta)
+
         screen.fill(BACKGROUND)
         draw_map(screen, md, o_x, o_y, zoom)
+        manager.draw_ui(screen)
         pygame.display.update()
 
 
@@ -146,3 +169,5 @@ if __name__ == "__main__":
 
     map_data = read_map(file_name)
     map_handler(map_data)
+
+    pygame.quit()
