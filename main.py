@@ -41,37 +41,43 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--filename", type=str)
 
 
-BACKGROUND = (0, 0, 0)
+BACKGROUND = (31, 128, 128)
 
 
 def coords_alterer(coords, o_x, o_y, zoom):
     for i in range(len(coords)):
-        coords[i] = (coords[i][0] * zoom + o_x, coords[i][1] * zoom + o_y)
+        coords[i] = (coords[i][0] * 10 * zoom + o_x, coords[i][1] * 10 * zoom + o_y)
     return coords
 
 
 def get_coords(country):
     if len(country.coords) > 1:
-        return country.coords
+        return [copy.deepcopy(country.coords)]
     else:
-        coords = []
+        coord_set = []
         for ct in country.consts:
             for cd in get_coords(ct):
-                coords.append(cd)
-        return coords
+                coord_set.append(cd)
+        return coord_set
 
 
-def draw_map(screen, md, o_x, o_y, zoom):
-    for i in range(0, len(md.countries)):
-        coords = get_coords(md.countries[i])
-        color = md.countries[i].color
-        pygame.draw.polygon(screen, color, coords_alterer(copy.deepcopy(coords), o_x, o_y, zoom))
+def draw_map(clicked, screen, countries, o_x, o_y, zoom):
+    if clicked[0] != 0:
+        draw_map(clicked[1::len(clicked)], screen, countries[clicked], o_x, o_y, zoom)
+    else:
+        for i in range(0, len(countries)):
+            coord_set = get_coords(countries[i])
+            color = countries[i].color
+            for coords in coord_set:
+                pygame.draw.polygon(screen, color, coords_alterer(coords, o_x, o_y, zoom))
+                pygame.draw.polygon(screen, (0, 0, 0), coords, zoom)
 
 
-def country_clicked_getter(md, x, y, o_x, o_y, zoom):
-    for i in range(0, len(md.countries)):
-        if Polygon(coords_alterer(copy.deepcopy(get_coords(md.countries[i])), o_x, o_y, zoom)).contains(Point(x, y)):
-            return i
+def country_clicked_getter(countries, x, y, o_x, o_y, zoom):
+    for i in range(0, len(countries)):
+        for coords in get_coords(countries[i]):
+            if Polygon(coords_alterer(coords, o_x, o_y, zoom)).contains(Point(x, y)):
+                return i
     return 0
 
 
@@ -96,7 +102,8 @@ def map_handler(md):
     running = True
     panning = False
     o_x, o_tx, o_y, o_ty = 0, 0, 0, 0
-    zoom = 20
+    clicked_list = [0]
+    zoom = 2
     while running:
         time_delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
@@ -115,12 +122,24 @@ def map_handler(md):
                 o_y += (event.pos[1] - o_ty)
                 o_tx, o_ty = event.pos
 
+            elif event.type == pygame.MOUSEWHEEL:  # Mouse Wheel
+                zoom += event.y * 2
+                if zoom <= 2:
+                    zoom = 2
+
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left Click
-                clicked = country_clicked_getter(md, event.pos[0], event.pos[1], o_x, o_y, zoom)
+                clicked = country_clicked_getter(md.countries, event.pos[0], event.pos[1], o_x, o_y, zoom)
                 if clicked != 0:
-                    print("Clicked on country", clicked)
+                    clicked_list.append(clicked)
+                    clicked_on = md.countries[clicked]
+                    full_name = clicked_on.name
+                    if clicked_on.prefix is not None:
+                        full_name = clicked_on.prefix + full_name
+                    if clicked_on.suffix is not None:
+                        full_name += clicked_on.suffix
+                    print("Name:", full_name)
                 else:
-                    print("Clicked on nothing")
+                    clicked_list = [0]
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == gui_dict["hello_button"]:
@@ -131,7 +150,7 @@ def map_handler(md):
         manager.update(time_delta)
 
         screen.fill(BACKGROUND)
-        draw_map(screen, md, o_x, o_y, zoom)
+        draw_map(clicked_list, screen, md.countries, o_x, o_y, zoom)
         manager.draw_ui(screen)
         pygame.display.update()
 
