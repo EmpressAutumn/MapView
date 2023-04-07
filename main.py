@@ -68,7 +68,7 @@ def get_coords(country):
 
 
 def draw_map(clicked, screen, countries, o_x, o_y, zoom):
-    if clicked[0] != 0:
+    if clicked[0] != -1:
         draw_map(clicked[1::len(clicked)], screen, countries[clicked], o_x, o_y, zoom)
     else:
         for i in range(0, len(countries)):
@@ -84,7 +84,7 @@ def country_clicked_getter(countries, x, y, o_x, o_y, zoom):
         for coords in get_coords(countries[i]):
             if Polygon(coords_alterer(coords, o_x, o_y, zoom)).contains(Point(x, y)):
                 return i
-    return 0
+    return -1
 
 
 def init_gui(manager):
@@ -108,7 +108,7 @@ def map_handler(md):
     running = True
     panning = False
     o_x, o_tx, o_y, o_ty = 0, 0, 0, 0
-    clicked_list = [0]
+    clicked_list = [-1]
     zoom = 2
     while running:
         time_delta = clock.tick(60) / 1000.0
@@ -138,7 +138,7 @@ def map_handler(md):
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left Click
                 clicked = country_clicked_getter(md.countries, event.pos[0], event.pos[1], o_x, o_y, zoom)
-                if clicked != 0:
+                if clicked != -1:
                     clicked_list.append(clicked)
                     clicked_on = md.countries[clicked]
                     full_name = clicked_on.name
@@ -148,7 +148,7 @@ def map_handler(md):
                         full_name += clicked_on.suffix
                     print("Name:", full_name)
                 else:
-                    clicked_list = [0]
+                    clicked_list = [-1]
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == gui_dict["hello_button"]:
