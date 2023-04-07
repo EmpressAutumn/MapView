@@ -24,7 +24,7 @@ class Region:
         if country_data["color"] is not None:
             self.color = country_data["color"]
         else:
-            self.color = list(np.random.choice(range(256), size=3))  # Generates a random color value, will be changed later
+            self.color = list(np.random.choice(range(256), size=3))  # Generates a random color value, will change later
         self.government = country_data["government"]
         self.leader = country_data["leader"]
         self.consts = []
@@ -50,15 +50,59 @@ def coords_alterer(coords, o_x, o_y, zoom):
     return coords
 
 
+def indexi(array, item, start=0, finish=0):
+    if finish == 0:
+        finish = len(array)
+    try:
+        return array.index(item, start, finish)
+    except ValueError:
+        return -1
+
+
+def get_next_segment(segments, segment):
+    for i in range(len(segments)):
+        if segments[i][0] == segment[1]:
+            return [segments[i], i]
+        elif segments[i][1] == segment[1]:
+            return [[segments[i][1], segments[i][0]], i]
+
+
+def get_common_outline(consts):
+    segments = []
+    for const in consts:
+        coords = get_coords(const)[0]
+        for i in range(len(coords)):
+            if i < len(coords) - 1:
+                segments.append([coords[i], coords[i + 1]])
+            else:
+                segments.append([coords[i], coords[0]])
+
+    i = 0
+    while i < len(segments):
+        next_pos = indexi(segments, segments[i], i + 1)
+        if next_pos > 0:
+            segments = segments[0: i] + segments[i + 1: len(segments)]
+        else:
+            i += 1
+
+    ordered_segments = [segments[0]]
+    for i in range(len(segments)):
+        thing = get_next_segment(segments, ordered_segments[i])
+        ordered_segments.append(thing[0])
+        segments = segments[0: i] + segments[i + 1: len(segments)]
+
+    coords = []
+    for seg in ordered_segments:
+        coords.append(seg[0])
+
+    return [coords]
+
+
 def get_coords(country):
     if len(country.coords) > 1:
         return [copy.deepcopy(country.coords)]
     else:
-        coord_set = []
-        for ct in country.consts:
-            for cd in get_coords(ct):
-                coord_set.append(cd)
-        return coord_set
+        return get_common_outline(country.consts)
 
 
 def draw_map(clicked, screen, countries, o_x, o_y, zoom):
