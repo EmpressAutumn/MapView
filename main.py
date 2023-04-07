@@ -6,6 +6,7 @@ import pygame
 import pygame_gui
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+from shapely.ops import unary_union
 
 
 class MapData:
@@ -50,59 +51,20 @@ def coords_alterer(coords, o_x, o_y, zoom):
     return coords
 
 
-def indexi(array, item, start=0, finish=0):
-    if finish == 0:
-        finish = len(array)
-    try:
-        return array.index(item, start, finish)
-    except ValueError:
-        return -1
-
-
-def get_next_segment(segments, segment):
-    for i in range(len(segments)):
-        if segments[i][0] == segment[1]:
-            return [segments[i], i]
-        elif segments[i][1] == segment[1]:
-            return [[segments[i][1], segments[i][0]], i]
-
-
-def get_common_outline(consts):
-    segments = []
-    for const in consts:
-        coords = get_coords(const)[0]
-        for i in range(len(coords)):
-            if i < len(coords) - 1:
-                segments.append([coords[i], coords[i + 1]])
-            else:
-                segments.append([coords[i], coords[0]])
-
-    i = 0
-    while i < len(segments):
-        next_pos = indexi(segments, segments[i], i + 1)
-        if next_pos > 0:
-            segments = segments[0: i] + segments[i + 1: len(segments)]
-        else:
-            i += 1
-
-    ordered_segments = [segments[0]]
-    for i in range(len(segments)):
-        thing = get_next_segment(segments, ordered_segments[i])
-        ordered_segments.append(thing[0])
-        segments = segments[0: i] + segments[i + 1: len(segments)]
-
-    coords = []
-    for seg in ordered_segments:
-        coords.append(seg[0])
-
-    return [coords]
-
-
 def get_coords(country):
     if len(country.coords) > 1:
         return [copy.deepcopy(country.coords)]
     else:
-        return get_common_outline(country.consts)
+        polygons = []
+        for const in country.consts:
+            polygons.append(Polygon(get_coords(const)[0]))
+        x, y = unary_union(polygons).exterior.coords.xy
+
+        coords = []
+        for i in range(len(x)):
+            coords.append((x[i], y[i]))
+
+        return [coords]
 
 
 def draw_map(clicked, screen, countries, o_x, o_y, zoom):
@@ -152,6 +114,9 @@ def map_handler(md):
         time_delta = clock.tick(60) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == gui_dict["quit"]:
+                running = False
+
+            elif event.type == pygame.QUIT:
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:  # Middle Click
