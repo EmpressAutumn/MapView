@@ -77,7 +77,10 @@ def draw_map(clicked, screen, countries, o_x, o_y, zoom, blank=False):
         if not get_coords(country[clicked_index]):
             draw_map(clicked[1: len(clicked)], screen, countries[clicked_index], o_x, o_y, zoom)
         else:
-            draw_map(clicked[1: len(clicked)], screen, countries[clicked_index].consts, o_x, o_y, zoom)
+            try:
+                draw_map(clicked[1: len(clicked)], screen, countries[clicked_index].consts, o_x, o_y, zoom)
+            except IndexError:
+                pass
     else:
         for i in range(0, len(countries)):
             coord_set = get_coords(countries[i])[0]
@@ -105,8 +108,8 @@ def init_gui(manager):
     gui_dict = {"quit": pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((700, 550), (100, 50)),
         text="Quit",
-        manager=manager
-    )}
+        manager=manager)
+    }
     return gui_dict
 
 
