@@ -26,30 +26,26 @@ class Region:
         self.coords.append(coordinate)
 
 
-def remove_by_index(list_i, x, y):
-    list_i[y] = list_i[y][0: x - 1] + list_i[y][x: len(list_i[y])]
-    if not list_i[y]:
-        list_i = list_i[0: y - 1] + list_i[y: len(list_i)]
-    return list_i
-
-
 def merge_provinces(prov_list):
     done = False
     md = []
+    done_colors = []
     while not done:
-        done = True
-        color_list = [prov_list[0][0]]
-        prov_list = remove_by_index(prov_list, 0, 0)
+        color_list = []
+        current_color = None
         for y in range(len(prov_list)):
             for x in range(len(prov_list[y])):
-                old_length = len(prov_list)
-                if prov_list[y][x].color == color_list[0].color:
-                    done = False
+                if prov_list[y][x].color not in done_colors and not None:
+                    current_color = prov_list[y][x].color
                     color_list.append(prov_list[y][x])
-                    prov_list = remove_by_index(prov_list, x, y)
-                    x -= 1
-                    if len(prov_list) == old_length:
-                        y -= 1
+                    prov_list[y][x].color = None
+        if current_color is not None:
+            done_colors.append(current_color)
+
+        else:
+            done = True
+
+    return md
 
 
 def map_to_json(provinces):
@@ -81,7 +77,7 @@ def load_map():
 def maploader_handler():
     provinces = load_map()
     prov_list = map_to_json(provinces)
-    merge_provinces(prov_list)
+    md = merge_provinces(prov_list)
 
     return md
 
