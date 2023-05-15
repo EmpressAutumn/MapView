@@ -17,7 +17,7 @@ class Region:
         self.government = country_data["government"]
         self.leader = country_data["leader"]
         self.consts = []
-        self.coords = []
+        self.coords = country_data["coords"]
 
     def add_const(self, constituency):
         self.consts.append(constituency)
@@ -41,10 +41,17 @@ def merge_provinces(prov_list):
                     prov_list[y][x].color = None
         if current_color is not None:
             done_colors.append(current_color)
-
+            polygons = []
+            for country in color_list:
+                polygons.append(Polygon(country.coords))
+            x, y = unary_union(polygons).exterior.coords.xy
+            coords = []
+            for i in range(len(x)):
+                coords.append((x[i], y[i]))
+            color_list[0].coords = coords
+            md.append(color_list[0])
         else:
             done = True
-
     return md
 
 
@@ -60,7 +67,7 @@ def map_to_json(provinces):
                 "color": provinces[y][x],
                 "government": None,
                 "leader": None,
-                "consts": [(x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1)]
+                "coords": [(x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1)]
             }))
         prov_list.append(row)
     return prov_list
